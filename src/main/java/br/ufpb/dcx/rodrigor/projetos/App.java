@@ -7,6 +7,8 @@ import br.ufpb.dcx.rodrigor.projetos.login.UsuarioController;
 import br.ufpb.dcx.rodrigor.projetos.login.UsuarioService;
 import br.ufpb.dcx.rodrigor.projetos.participante.controllers.ParticipanteController;
 import br.ufpb.dcx.rodrigor.projetos.participante.services.ParticipanteService;
+import br.ufpb.dcx.rodrigor.projetos.product.controllers.ProductController;
+import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import br.ufpb.dcx.rodrigor.projetos.projeto.controllers.ProjetoController;
 import br.ufpb.dcx.rodrigor.projetos.projeto.services.ProjetoService;
 import io.javalin.Javalin;
@@ -90,6 +92,7 @@ public class App {
         config.appData(Keys.PARTICIPANTE_SERVICE.key(), participanteService);
         config.appData(Keys.USUARIO_SERVICE.key(), new UsuarioService());
         config.appData(Keys.FORM_SERVICE.key(), new FormService());
+        config.appData(Keys.PRODUCT_SERVICE.key(), new ProductService());
     }
 
 
@@ -131,6 +134,9 @@ public class App {
         app.get("/form/{formId}", formController::abrirFormulario);
         app.post("/form/{formId}", formController::validarFormulario);
 
+        //Rotas para o controlador de produtos
+        ProductController productController = new ProductController();
+        productController.registerRoutes(app);
     }
 
 
@@ -161,7 +167,7 @@ public class App {
         return templateEngine;
     }
 
-    private Properties carregarPropriedades() {
+    public static Properties carregarPropriedades() {
         Properties prop = new Properties();
         try (InputStream input = App.class.getClassLoader().getResourceAsStream("application.properties")) {
             if(input == null){
