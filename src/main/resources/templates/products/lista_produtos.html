@@ -97,7 +97,14 @@
                             </div>
                             <div class="mb-3">
                                 <label for="preco" class="form-label">Preço</label>
-                                <input type="number" step="0.01" class="form-control" name="preco" required>
+                                <input type="number" step="0.01"
+                                       class="form-control"
+                                       name="preco"
+                                       required
+                                       min="0"
+                                       onkeydown="if(event.key === '-') event.preventDefault();"
+                                       oninput="if(this.value < 0) this.value = Math.abs(this.value);"
+                                       placeholder="0,00">
                             </div>
                             <div class="text-end">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

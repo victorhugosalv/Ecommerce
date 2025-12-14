@@ -5,12 +5,9 @@ import br.ufpb.dcx.rodrigor.projetos.form.services.FormService;
 import br.ufpb.dcx.rodrigor.projetos.login.LoginController;
 import br.ufpb.dcx.rodrigor.projetos.login.UsuarioController;
 import br.ufpb.dcx.rodrigor.projetos.login.UsuarioService;
-import br.ufpb.dcx.rodrigor.projetos.participante.controllers.ParticipanteController;
-import br.ufpb.dcx.rodrigor.projetos.participante.services.ParticipanteService;
+import br.ufpb.dcx.rodrigor.projetos.loja.controllers.LojaController;
 import br.ufpb.dcx.rodrigor.projetos.product.controllers.ProductController;
 import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
-import br.ufpb.dcx.rodrigor.projetos.projeto.controllers.ProjetoController;
-import br.ufpb.dcx.rodrigor.projetos.projeto.services.ProjetoService;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
@@ -87,9 +84,6 @@ public class App {
     }
 
     private void registrarServicos(JavalinConfig config) {
-        ParticipanteService participanteService = new ParticipanteService("http://localhost:8001");
-        config.appData(Keys.PROJETO_SERVICE.key(), new ProjetoService(participanteService));
-        config.appData(Keys.PARTICIPANTE_SERVICE.key(), participanteService);
         config.appData(Keys.USUARIO_SERVICE.key(), new UsuarioService());
         config.appData(Keys.FORM_SERVICE.key(), new FormService());
         config.appData(Keys.PRODUCT_SERVICE.key(), new ProductService());
@@ -97,28 +91,27 @@ public class App {
 
 
     private void configurarRotas(Javalin app) {
-        LoginController loginController = new LoginController();
-        app.get("/", ctx -> ctx.redirect("/login"));
-        app.get("/login", loginController::mostrarPaginaLogin);
-        app.post("/login", loginController::processarLogin);
-        app.get("/logout", loginController::logout);
 
-        app.get("/area-interna", ctx -> {
-            if (ctx.sessionAttribute("usuario") == null) {
-                ctx.redirect("/login");
-            } else {
-                ctx.render("area_interna.html");
+// --- FILTRO DE SEGURANÇA ---
+        app.before(ctx -> {
+            String path = ctx.path();
+
+            // Verifica se é uma rota protegida
+            if (path.startsWith("/products") ||
+                    path.startsWith("/area-interna") ||
+                    // Protege /usuarios, MAS libera o cadastro (signup) e o salvamento (cadastrar)
+                    (path.startsWith("/usuarios") && !path.equals("/usuarios/signup") && !path.equals("/usuarios/cadastrar"))) {
+
+                if (ctx.sessionAttribute("usuario") == null) {
+                    ctx.redirect("/login");
+                }
             }
         });
 
-        ProjetoController projetoController = new ProjetoController();
-        app.get("/projetos", projetoController::listarProjetos);
-        app.get("/projetos/novo", projetoController::mostrarFormulario);
-        app.post("/projetos", projetoController::adicionarProjeto);
-        app.get("/projetos/{id}/remover", projetoController::removerProjeto);
-
-        ParticipanteController participanteController = new ParticipanteController();
-        app.get("/participantes", participanteController::listarParticipantes);
+        LoginController loginController = new LoginController();
+        app.get("/login", loginController::mostrarPaginaLogin);
+        app.post("/login", loginController::processarLogin);
+        app.get("/logout", loginController::logout);
 
 
         // Rotas para o controlador de usuário
@@ -137,8 +130,20 @@ public class App {
         //Rotas para o controlador de produtos
         ProductController productController = new ProductController();
         productController.registerRoutes(app);
-    }
 
+        //Rotas para o controlador da Loja
+        LojaController lojaController = new LojaController();
+
+        app.get("/", lojaController::mostrarVitrine);
+        app.get("/vitrine", lojaController::mostrarVitrine);
+
+        //Rotas para o carrinho
+        app.get("/carrinho", lojaController::verCarrinho);
+        app.post("/carrinho/adicionar/{id}", lojaController::adicionarAoCarrinho);
+        app.get("/carrinho/aumentar/{id}", lojaController::aumentarQuantidade);
+        app.get("/carrinho/diminuir/{id}", lojaController::diminuirQuantidade);
+        app.get("/carrinho/remover/{id}", lojaController::removerDoCarrinho);
+    }
 
 
     private int obterPortaServidor() {

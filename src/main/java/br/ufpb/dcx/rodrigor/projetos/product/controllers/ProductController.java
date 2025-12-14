@@ -79,7 +79,6 @@ public class ProductController {
         });
 
         // 4. SALVAR
-
         app.post("/products/salvar", ctx -> {
             ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
 
@@ -91,27 +90,37 @@ public class ProductController {
             String descricao = ctx.formParam("descricao");
 
             Product p = new Product();
+            // Se for edição, mantém o ID
+            if (idTxt != null && !idTxt.isEmpty()) {
+                p.setId(Integer.parseInt(idTxt));
+            }
             p.setNome(nome);
             p.setDescricao(descricao);
 
-
+            // Conversão do Preço
             if (precoTxt != null) precoTxt = precoTxt.replace(",", ".");
             try {
                 p.setPreco(new java.math.BigDecimal(precoTxt));
             } catch (Exception e) {
-                p.setPreco(java.math.BigDecimal.ZERO); // Valor padrão se falhar a conversão
+                p.setPreco(java.math.BigDecimal.ZERO);
             }
 
+            // --- VALIDAÇÃO DE PREÇO NEGATIVO (NOVA) ---
+            if (p.getPreco().compareTo(java.math.BigDecimal.ZERO) < 0) {
+                Map<String, Object> model = new HashMap<>();
+                model.put("product", p);
+                model.put("erro", "O preço não pode ser negativo.");
+                ctx.render("products/form_produto", model); // Caminho corrigido
+                return; // Para a execução aqui
+            }
+            // -------------------------------------------
+
             try {
-                // TENTA SALVAR
-                if (idTxt != null && !idTxt.isEmpty()) {
-                    int id = Integer.parseInt(idTxt);
-                    p.setId(id);
-                    service.alterarProduto(id, p);
-                } else {
+                if (p.getId() > 0) { // Se tem ID, altera
+                    service.alterarProduto(p.getId(), p);
+                } else { // Se não, insere
                     service.inserirProduto(p);
                 }
-
 
                 ctx.redirect("/products");
 
@@ -119,10 +128,8 @@ public class ProductController {
                 Map<String, Object> model = new HashMap<>();
                 model.put("product", p);
 
-
                 String msgOriginal = e.getMessage();
                 String mensagemAmigavel = "Erro ao salvar o produto.";
-
 
                 if (msgOriginal.contains("estouro de campo") || msgOriginal.contains("numeric field overflow")) {
                     mensagemAmigavel = "O preço informado é muito alto! O limite é 9.999.999.999,99.";
@@ -133,7 +140,10 @@ public class ProductController {
                 }
 
                 model.put("erro", mensagemAmigavel);
-                ctx.render("form-produto", model);
+
+                // --- CORREÇÃO DO ERRO DE TEMPLATE ---
+                // Antes estava "form-produto", o correto é "products/form_produto"
+                ctx.render("products/form_produto", model);
             }
         });
 

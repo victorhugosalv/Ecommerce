@@ -14,7 +14,7 @@ public class LoginController {
         if(teste != null){
             throw new RuntimeException("Erro de teste a partir do /login?teste=1");
         }
-
+        ctx.attribute("esconderCarrinho", true);
         ctx.render("/login/login.html");
     }
 
@@ -22,13 +22,15 @@ public class LoginController {
         String login = ctx.formParam("login");
         String senha = ctx.formParam("senha");
 
-
         UsuarioService usuarioService = ctx.appData(Keys.USUARIO_SERVICE.key());
         Usuario usuario = usuarioService.buscarUsuarioPorLogin(login);
+
         if (usuario != null && BCrypt.checkpw(senha, usuario.getSenha())) {
             ctx.sessionAttribute("usuario", usuario);
             logger.info("Usuário '{}' autenticado com sucesso.", login);
-            ctx.redirect("/area-interna");
+
+            // ALTERADO AQUI: Redireciona para vitrine em vez de area-interna
+            ctx.redirect("/vitrine");
         } else {
             logger.warn("Tentativa de login falhou para o usuário: {}", login);
             ctx.attribute("erro", "Usuário ou senha inválidos");
