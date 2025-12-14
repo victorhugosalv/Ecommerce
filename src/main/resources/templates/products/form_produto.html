@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::section})}">
 <head>
     <title>Cadastro de Produto</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -19,7 +19,7 @@
                     <div class="card-body">
 
                         <div th:if="${erro}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <strong th:text="${erro}">Mensagem de erro aqui</strong>
+                            <strong th:text="${erro}"></strong>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
 
@@ -30,7 +30,10 @@
                             <div class="mb-3">
                                 <label for="nome" class="form-label">Nome *</label>
                                 <input type="text" class="form-control" id="nome" name="nome"
-                                       th:field="*{nome}" required>
+                                       th:field="*{nome}"
+                                       required
+                                       maxlength="50">
+                                <div class="form-text">Máximo de 50 caracteres.</div>
                             </div>
 
                             <div class="mb-3">
@@ -42,15 +45,13 @@
                             <div class="mb-3">
                                 <label for="preco" class="form-label">Preço (R$) *</label>
                                 <input type="number" step="0.01"
-                                       min="0"
-                                       max="9999999999.99"
                                        class="form-control"
                                        id="preco" name="preco"
                                        th:field="*{preco}" required
-                                       onkeydown="if(event.key === '-') event.preventDefault();"
+                                       placeholder="0,00"
+                                       onkeydown="if(event.key === '-' || event.key === 'e') event.preventDefault();"
                                        oninput="if(this.value.length > 13) this.value = this.value.slice(0, 13);">
-
-                                <div class="form-text">Valor positivo obrigatório.</div>
+                                <div class="form-text">Máximo de 13 dígitos.</div>
                             </div>
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
@@ -65,6 +66,7 @@
         </div>
     </div>
 </section>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

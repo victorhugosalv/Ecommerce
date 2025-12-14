@@ -20,7 +20,34 @@
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title text-dark" th:text="${produto.nome}">Nome</h5>
-                    <p class="card-text text-muted small flex-grow-1" th:text="${produto.descricao}">Descrição...</p>
+                    <p class="card-text">
+                        <a href="#"
+                           class="text-decoration-none text-secondary"
+                           data-bs-toggle="modal"
+                           th:data-bs-target="'#modalDesc-' + ${produto.id}"
+                           title="Clique para ler a descrição completa">
+
+                            <span th:text="${#strings.abbreviate(produto.descricao, 50)}"></span>
+                            <i class="bi bi-eye-fill ms-1" style="font-size: 0.8rem;"></i>
+                        </a>
+                    </p>
+
+                    <div class="modal fade" th:id="'modalDesc-' + ${produto.id}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" th:text="${produto.nome}">Nome do Produto</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p th:text="${produto.descricao}">Descrição completa aqui...</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="mt-3">
                         <h4 class="text-primary fw-bold mb-3" th:text="${'R$ ' + #numbers.formatDecimal(produto.preco, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</h4>

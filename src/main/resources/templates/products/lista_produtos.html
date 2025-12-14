@@ -18,9 +18,7 @@
                 </form>
             </div>
             <div class="col-md-4 text-end">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAdicionar">
-                    Adicionar
-                </button>
+                <a href="/products/novo" class="btn btn-primary">Adicionar</a>
             </div>
         </div>
 
@@ -38,7 +36,18 @@
                 <th:block th:each="produto : ${products}">
                     <tr>
                         <td th:text="${produto.nome}">Nome</td>
-                        <td th:text="${produto.descricao}">Descricao</td>
+
+                        <td>
+                            <a href="#"
+                               class="text-decoration-none text-dark d-flex align-items-center"
+                               data-bs-toggle="modal"
+                               th:data-bs-target="|#modalAdm-${produto.id}|"
+                               title="Ver detalhes">
+
+                                <span th:text="${#strings.abbreviate(produto.descricao, 50)}" class="me-1"></span>
+                                <i class="bi bi-eye-fill text-primary" style="font-size: 0.9rem;"></i>
+                            </a>
+                        </td>
 
                         <td th:text="${'R$ ' + #numbers.formatDecimal(produto.preco, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
 
@@ -49,18 +58,39 @@
 
                             <button type="button" class="btn btn-danger btn-sm"
                                     data-bs-toggle="modal"
-                                    th:data-bs-target="'#modalRemover' + ${produto.id}">
+                                    th:data-bs-target="|#modalRemover${produto.id}|">
                                 Remover
                             </button>
                         </td>
                     </tr>
 
-                    <div class="modal fade" th:id="'modalRemover' + ${produto.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal fade" th:id="|modalAdm-${produto.id}|" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Detalhes do Produto</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h5 class="fw-bold text-primary" th:text="${produto.nome}"></h5>
+                                    <hr>
+                                    <p th:text="${produto.descricao}" style="white-space: pre-wrap;"></p>
+                                    <hr>
+                                    <p class="mb-0 fw-bold text-success" th:text="${'Preço: R$ ' + #numbers.formatDecimal(produto.preco, 1, 'POINT', 2, 'COMMA')}"></p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" th:id="|modalRemover${produto.id}|" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Confirmar Exclusão</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
                                     <p>Tem certeza que deseja remover <strong th:text="${produto.nome}"></strong>?</p>
@@ -72,50 +102,11 @@
                             </div>
                         </div>
                     </div>
+
                 </th:block>
                 </tbody>
             </table>
         </div>
-
-        <div class="modal fade" id="modalAdicionar" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Novo Produto</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="/products/salvar" method="post">
-
-                            <div class="mb-3">
-                                <label for="nome" class="form-label">Nome</label>
-                                <input type="text" class="form-control" name="nome" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="descricao" class="form-label">Descrição</label>
-                                <input type="text" class="form-control" name="descricao">
-                            </div>
-                            <div class="mb-3">
-                                <label for="preco" class="form-label">Preço</label>
-                                <input type="number" step="0.01"
-                                       class="form-control"
-                                       name="preco"
-                                       required
-                                       min="0"
-                                       onkeydown="if(event.key === '-') event.preventDefault();"
-                                       oninput="if(this.value < 0) this.value = Math.abs(this.value);"
-                                       placeholder="0,00">
-                            </div>
-                            <div class="text-end">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">Salvar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 </section>
 

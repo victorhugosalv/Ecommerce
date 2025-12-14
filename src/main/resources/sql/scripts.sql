@@ -5,8 +5,8 @@
 -- 1. Criação da Tabela de Produtos
 CREATE TABLE IF NOT EXISTS products (
     idproduct SERIAL PRIMARY KEY,
-    nome VARCHAR(80) NOT NULL,
-    descricao VARCHAR(200) NOT NULL,
+    nome VARCHAR(50) NOT NULL,
+    descricao TEXT NOT NULL,
     preco NUMERIC(10,2) CHECK (preco >= 0)
     );
 
