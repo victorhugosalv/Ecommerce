@@ -179,8 +179,7 @@ public class App {
         Properties prop = new Properties();
         try (InputStream input = App.class.getClassLoader().getResourceAsStream("application.properties")) {
             if(input == null){
-                logger.error("Arquivo de propriedades /src/main/resources/application.properties não encontrado");
-                logger.error("Use o arquivo application.properties.examplo como base para criar o arquivo application.properties");
+                logger.error("Arquivo de propriedades não encontrado");
                 System.exit(1);
             }
             prop.load(input);
@@ -188,10 +187,21 @@ public class App {
             String envDbUrl = System.getenv("DB_URL");
             if (envDbUrl != null) {
                 prop.setProperty("db.url", envDbUrl);
-                logger.info("Usando URL do banco definida via Variável de Ambiente: {}", envDbUrl);
+                logger.info("Docker: Usando URL do banco via env var");
             }
+
+            String envDbUser = System.getenv("DB_USER");
+            if (envDbUser != null) {
+                prop.setProperty("db.user", envDbUser); // Sobrescreve o valor do arquivo
+            }
+
+            String envDbPassword = System.getenv("DB_PASSWORD");
+            if (envDbPassword != null) {
+                prop.setProperty("db.password", envDbPassword); // Sobrescreve o valor do arquivo
+            }
+
         } catch (IOException ex) {
-            logger.error("Erro ao carregar o arquivo de propriedades /src/main/resources/application.properties", ex);
+            logger.error("Erro ao carregar propriedades", ex);
             System.exit(1);
         }
         return prop;

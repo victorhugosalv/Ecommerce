@@ -41,18 +41,26 @@ public class CarrinhoService {
      * @return O carrinho unificado.
      */
     public Carrinho mesclarCarrinhos(Usuario usuario, Carrinho carrinhoSessao) {
-        // 1. Carrega o que já está salvo no banco
+        // 1. Pega o que já estava salvo no banco
         Carrinho carrinhoBanco = carregarCarrinhoUsuario(usuario);
 
-        // 2. Se tiver coisas na sessão, joga pro banco
         if (carrinhoSessao != null && !carrinhoSessao.getItens().isEmpty()) {
-            logger.info("Mesclando carrinho da sessão com o do usuário {}", usuario.getLogin());
+            logger.info("Mesclando itens da sessão para a conta de: {}", usuario.getLogin());
 
-            for (ItemCarrinho item : carrinhoSessao.getItens()) {
-                // Atualiza o objeto em memória
-                carrinhoBanco.adicionarItem(item.getProduto(), item.getQuantidade());
-                // Persiste no banco imediatamente
-                carrinhoRepository.salvarItem(usuario.getId(), item.getProduto().getId(), item.getQuantidade());
+            for (ItemCarrinho itemSessao : carrinhoSessao.getItens()) {
+                // A. Adiciona na memória (O objeto Carrinho já sabe somar se for igual)
+                carrinhoBanco.adicionarItem(itemSessao.getProduto(), itemSessao.getQuantidade());
+
+                // B. Descobre qual ficou a quantidade TOTAL (Banco + Sessão)
+                int produtoId = itemSessao.getProduto().getId();
+                int novaQuantidadeTotal = carrinhoBanco.getItens().stream()
+                        .filter(i -> i.getProduto().getId() == produtoId)
+                        .findFirst()
+                        .map(ItemCarrinho::getQuantidade)
+                        .orElse(itemSessao.getQuantidade());
+
+                // C. Salva o TOTAL no banco
+                atualizarItem(usuario, produtoId, novaQuantidadeTotal);
             }
         }
         return carrinhoBanco;
