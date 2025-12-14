@@ -1,9 +1,31 @@
 services:
+  # Serviço da Aplicação (Javalin)
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: javalin-app
+    container_name: ecommerce-app
     ports:
       - "8000:8000"
-    restart: no
+    depends_on:
+      - db
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/ecommerce
+    restart: on-failure
+
+  # Serviço do Banco de Dados (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: ecommerce-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./src/main/resources/sql/scripts.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

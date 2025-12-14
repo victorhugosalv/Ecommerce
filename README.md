@@ -1,85 +1,108 @@
-**Universidade Federal da Paraíba - UFPB** \
-**Centro de Ciências Exatas e Educação - CCAE** \
-**Departamento de Ciências Exatas - DCX**
+# 🛒 E-commerce Javalin Project
 
-**Professor:** [Rodrigo Rebouças de Almeida](http://rodrigor.com)
+Bem-vindo ao repositório do projeto final da disciplina. Este é um sistema de E-commerce web desenvolvido em Java, utilizando uma arquitetura MVC leve, renderização no servidor (SSR) e persistência de dados.
 
-# Projeto de Referência: Sistema de Gestão de Projetos
+## 📺 Demonstração em Vídeo
 
-Este é um projeto de referência para os alunos das disciplinas de Análise e 
-Projeto de Sistemas e Projeto de Sistemas Orientados a Objetos dos cursos de 
-Sistemas de Informação e Lic. em Ciência da Computação da UFPB, campus IV em 
-Rio Tinto.
+**[CLIQUE AQUI PARA ASSISTIR AO VÍDEO DE APRESENTAÇÃO]**
+*(Insira o link do YouTube ou Drive aqui)*
 
-🚨 Atenção: Este projeto foi desenvolvido para servir como base para a implementação do 
-projeto da disciplina. Ele é incompleto e possui vários pontos de melhoria 
-propositais, que serão discutidos em sala de aula. Deste modo, não considere 
-cegamente este projeto como uma referência para boas práticas de programação 
-e um bom design. Repito, eu coloquei propositalmente alguns problemas de 
-design que serão discutidos em sala de aula.
+> *Neste vídeo demonstramos: Cadastro de usuário, fluxo de compra, persistência do carrinho (fechando o navegador) e a área administrativa.*
 
-Trata-se de um projeto de controle de Projetos, onde, por enquanto é 
-possível cadastrar projetos e participantes.
+---
 
-## Arquitetura do Projeto
+## 🚀 Sobre o Projeto
 
-A arquitetura do nosso sistema segue uma arquitetura típica de aplicações 
-web - MVC(Model-View-Controller). Neste projeto utilizamos as seguintes 
-tecnologias: com algumas tecnologias específicas.
+Este sistema simula uma loja virtual completa com diferenciação entre **Cliente** e **Administrador**. O foco principal foi a implementação de persistência de dados em banco relacional, autenticação segura baseada em sessão e manipulação de estado do carrinho de compras.
 
-- Tecnologias Utilizadas:
-  - **Javalin**: Framework web leve para Java. (https://javalin.io/)
-  - **Thymeleaf**: Motor de templates para renderização de páginas HTML. 
-    (https://www.thymeleaf.org/)
-  - **MongoDB**: Banco de dados NoSQL orientado a documentos. (https://www.mongodb.com/)
-  - **Bootstrap**: Também estamos usando o Bootstrap para o estilo das páginas 
-    HTML. (https://getbootstrap.com/)
+### Funcionalidades Principais
 
-![arquitetura.png](arquitetura.png)
+#### 👤 Para o Cliente (Área Pública)
+* **Vitrine de Produtos:** Visualização de produtos cadastrados com preços, descrições e paginação.
+* **Carrinho de Compras Inteligente:**
+    * Adicionar itens com quantidade personalizada.
+    * Aumentar/Diminuir quantidades e remover itens.
+    * **Persistência:** O carrinho é salvo no **PostgreSQL**. Se o usuário fechar o navegador e voltar (ou acessar de outro PC), seus itens estarão lá.
+    * **Mesclagem:** Itens adicionados anonimamente (antes do login) são transferidos automaticamente para a conta do usuário ao entrar.
+* **Cadastro e Login:** Sistema de autenticação e registro de novos usuários.
 
-Descrição dos elementos da arquitetura:
+#### 🛡️ Para o Administrador (Área Restrita)
+* **Gestão de Produtos:** CRUD completo (Criar, Ler, Atualizar, Deletar).
+* **Proteção de Rotas:** Filtros de segurança (interceptadores) impedem acesso não autorizado às áreas de gestão.
+* **Validações:** O sistema impede preços negativos, estoques inconsistentes e erros de formulário.
 
-1. **Usuário/Navegador**:
-   - Representa o usuário que interage com a aplicação por meio de um navegador web.
-   - O navegador envia solicitações HTTP (URLs/endpoints) para a aplicação e recebe respostas (HTML, CSS, JS) para renderização.
+---
 
-2. **Controller (Controlador)**:
-   - É implementado utilizando **Javalin**, um framework leve para desenvolvimento de aplicações web em Java.
-   - O controlador recebe as requisições HTTP do navegador e decide qual serviço chamar para processar a lógica de negócio.
-   - Depois de processada, a resposta é enviada para a camada de visualização (View) ou diretamente de volta ao navegador.
+## 🛠️ Tecnologias Utilizadas
 
-3. **View (Visão)**:
-   - Utiliza **Thymeleaf**, um motor de templates em Java para renderizar páginas HTML.
-   - Os controladores passam os dados necessários para a View, que gera o HTML dinâmico, que é então enviado de volta ao navegador.
-   - Além de HTML, pode incluir CSS e JS para formar a interface do usuário.
+* **Linguagem:** Java 21
+* **Framework Web:** [Javalin](https://javalin.io/) (Leve e performático)
+* **Template Engine:** [Thymeleaf](https://www.thymeleaf.org/) (Renderização HTML no servidor)
+* **Banco de Dados:** PostgreSQL 15
+* **Infraestrutura:** Docker & Docker Compose
+* **Logs:** Log4j2
+* **Build Tool:** Maven
 
-4. **Model (Modelo)**:
-   - Representa os dados e a lógica de negócio da aplicação.
-   - Os serviços utilizam o modelo para manipular dados, que podem ser recebidos ou enviados para o repositório.
+---
 
-5. **Services (Serviços)**:
-   - Contêm a lógica de negócio da aplicação.
-   - Eles manipulam o modelo e coordenam as interações entre o controlador e o repositório.
+## ⚙️ Como Executar o Projeto
 
-6. **Repository (Repositório)**:
-   (🚨 Nesta implementação não estamos usando banco de dados ou o MongoDB)
-   - Responsável pela persistência dos dados.
-   - Neste diagrama, está conectado a um banco de dados **MongoDB**.
-   - O repositório abstrai as operações de banco de dados, permitindo que os serviços manipulem dados sem precisar conhecer os detalhes de implementação do armazenamento.
+Oferecemos duas formas de execução. A **Opção 1 (Docker)** é a recomendada por configurar todo o ambiente automaticamente.
 
-### Fluxo Geral:
-- O usuário interage com o navegador, que envia uma requisição HTTP ao controlador via uma URL ou endpoint específico.
-- O controlador, implementado em Javalin, processa a requisição chamando os serviços necessários.
-- Os serviços acessam e manipulam os dados através do repositório, que persiste essas informações no MongoDB.
-- O controlador então decide se a resposta será um HTML gerado pelo Thymeleaf (caso de uma página web) ou se deve enviar uma resposta diretamente ao navegador.
+### 🐳 Opção 1: Via Docker (Recomendada)
+O Docker se encarrega de subir o banco de dados e criar as tabelas automaticamente.
 
-## Configuração do Projeto
-
-1. Copie o arquivo `application.properties.exemplo` para `application.properties`:
+1. **Pré-requisitos:** Ter Docker e Docker Compose instalados.
+2. Na raiz do projeto (onde está o arquivo `docker-compose.yml`), abra o terminal e execute:
    ```bash
-   cp src/main/resources/application.properties.exemplo src/main/resources/application.properties
+   docker-compose up --build
+   
+3. Aguarde o sistema iniciar. O script de banco (src/main/resources/sql/scripts.sql) será executado automaticamente pelo container na primeira execução.
+4. Quando aparecer Javalin started, acesse: http://localhost:8000
+
+### 🔧 Opção 2: Execução Manual (Sem Docker)
+Caso prefira rodar localmente configurando o banco manualmente, siga os passos:
+
+### Banco de Dados:
+
+1. Tenha o PostgreSQL instalado e rodando.
+
+2. Crie um banco de dados chamado ecommerce.
+
+3. Localize o script SQL no projeto em: src/main/resources/sql/scripts.sql.
+
+4. Abra o terminal e execute o script no seu banco para criar as tabelas products e itens_carrinho.
+
+### Configuração: 
+
+1. Copie o arquivo de exemplo:
+    ```bash
+    cp src/main/resources/application.properties.exemplo src/main/resources/application.properties
     ```
-2. Execute a aplicação a partir da classe `App`:
-   ```bash
-   mvn clean compile exec:java
-   ```
+
+3. Edite o arquivo application.properties com seu usuário e senha do banco local.
+
+### Execução:
+```bash
+      mvn clean install
+      java -jar target/ecommerce-1.0-SNAPSHOT.jar
+```
+
+**Acesse**: http://localhost:8000
+
+## 🏛️ Arquitetura do Sistema
+O projeto segue estritamente o padrão MVC (Model-View-Controller) com Injeção de Dependência manual:
+
+* **Controller (/controllers)**: Gerencia as requisições HTTP e decide qual template renderizar. Não acessa o banco diretamente.
+
+* **Service (/services)**: Contém a regra de negócio. Exemplo: CarrinhoService gerencia a lógica de mesclar carrinhos da sessão com o banco.
+
+* **Repository (/repository)**: Responsável único pelo acesso a dados (SQL puro via JDBC).
+
+* **Model (/model)**: Classes POJO que representam as entidades do sistema.
+
+## 🧪 Usuários de Teste
+#### O sistema carrega usuários pré-definidos do arquivo CSV (src/main/resources/csv/Usuario.csv), mas novos podem ser cadastrados via interface.
+
+* **Login Admin**: vh@teste.com
+* **Senha: 123456**

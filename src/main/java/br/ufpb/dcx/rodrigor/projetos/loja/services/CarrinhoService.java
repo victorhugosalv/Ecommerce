@@ -7,6 +7,11 @@ import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Serviço responsável pela lógica de negócio do Carrinho de Compras.
+ * Gerencia a persistência, recuperação e fusão de carrinhos entre sessão e banco de dados.
+ */
+
 public class CarrinhoService {
     private static final Logger logger = LogManager.getLogger(CarrinhoService.class);
 
@@ -18,14 +23,23 @@ public class CarrinhoService {
         this.carrinhoRepository = new CarrinhoRepository();
         this.productService = productService;
     }
-
-    // Regra de Negócio 1: Carregar carrinho do banco
+    /**
+     * Carrega o carrinho persistido no banco de dados para um usuário específico.
+     * @param usuario O usuário logado.
+     * @return O carrinho recuperado ou um carrinho vazio se o usuário for nulo.
+     */
     public Carrinho carregarCarrinhoUsuario(Usuario usuario) {
         if (usuario == null) return new Carrinho();
         return carrinhoRepository.carregarCarrinho(usuario.getId(), productService);
     }
 
-    // Regra de Negócio 2: Mesclar Carrinho da Sessão (Anônimo) com o do Banco (Login)
+    /**
+     * Realiza a fusão (merge) entre o carrinho temporário da sessão e o carrinho salvo no banco.
+     * Útil quando o usuário adiciona itens como anônimo e depois faz login.
+     * * @param usuario O usuário que acabou de logar.
+     * @param carrinhoSessao O carrinho que estava na memória antes do login.
+     * @return O carrinho unificado.
+     */
     public Carrinho mesclarCarrinhos(Usuario usuario, Carrinho carrinhoSessao) {
         // 1. Carrega o que já está salvo no banco
         Carrinho carrinhoBanco = carregarCarrinhoUsuario(usuario);
@@ -44,7 +58,10 @@ public class CarrinhoService {
         return carrinhoBanco;
     }
 
-    // Regra de Negócio 3: Atualizar item (Salvar ou Remover dependendo da qtd)
+    /**
+     * Atualiza a quantidade de um item no banco de dados.
+     * Se a quantidade for <= 0, o item é removido.
+     */
     public void atualizarItem(Usuario usuario, int produtoId, int novaQuantidade) {
         if (usuario == null) return; // Se não tem usuário, não salva no banco (só sessão)
 

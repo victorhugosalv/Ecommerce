@@ -8,6 +8,8 @@ import br.ufpb.dcx.rodrigor.projetos.loja.services.CarrinhoService;
 import br.ufpb.dcx.rodrigor.projetos.product.model.Product;
 import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import io.javalin.http.Context;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +19,8 @@ import java.util.stream.Collectors;
 
 public class LojaController {
 
-    // Auxiliar para pegar carrinho da sessão
+    private static final Logger logger = LogManager.getLogger(LojaController.class);
+
     private Carrinho obterCarrinho(Context ctx) {
         Carrinho carrinho = ctx.sessionAttribute("carrinho");
         if (carrinho == null) {
@@ -27,7 +30,6 @@ public class LojaController {
         return carrinho;
     }
 
-    // Auxiliar para chamar o SERVICE
     private void persistirSeLogado(Context ctx, int produtoId, int novaQuantidade) {
         Usuario u = ctx.sessionAttribute("usuario");
         if (u != null) {
@@ -37,18 +39,24 @@ public class LojaController {
     }
 
     public void mostrarVitrine(Context ctx) {
-        ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
+        try {
+            ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
 
-        List<Product> produtos = service.listarProdutos().stream()
-                .filter(p -> p != null)
-                .collect(Collectors.toList());
+            // Filtra nulos para evitar erros no template
+            List<Product> produtos = service.listarProdutos().stream()
+                    .filter(p -> p != null)
+                    .collect(Collectors.toList());
 
-        Map<String, Object> model = new HashMap<>();
-        model.put("produtos", produtos);
-        model.put("carrinho", obterCarrinho(ctx));
-        model.put("nomeLayout", (ctx.sessionAttribute("usuario") != null) ? "layout" : "layout-publico");
+            Map<String, Object> model = new HashMap<>();
+            model.put("produtos", produtos);
+            model.put("carrinho", obterCarrinho(ctx));
+            model.put("nomeLayout", (ctx.sessionAttribute("usuario") != null) ? "layout" : "layout-publico");
 
-        ctx.render("/loja/vitrine.html", model);
+            ctx.render("/loja/vitrine.html", model);
+        } catch (Exception e) {
+            logger.error("Erro ao renderizar vitrine", e);
+            ctx.status(500).result("Erro interno no servidor");
+        }
     }
 
     public void adicionarAoCarrinho(Context ctx) {
@@ -64,25 +72,26 @@ public class LojaController {
                 Carrinho carrinho = obterCarrinho(ctx);
                 carrinho.adicionarItem(produto, quantidade);
 
-                // Pega o item atualizado para saber a quantidade total e manda pro Service
+                // Persistência
                 Optional<ItemCarrinho> item = carrinho.getItens().stream()
                         .filter(i -> i.getProduto().getId() == id).findFirst();
 
                 if(item.isPresent()){
                     persistirSeLogado(ctx, id, item.get().getQuantidade());
                 }
+                logger.info("Produto {} adicionado ao carrinho. Qtd: {}", id, quantidade);
             }
-            ctx.redirect("/vitrine");
         } catch (Exception e) {
-            ctx.redirect("/vitrine");
+            logger.warn("Tentativa inválida de adicionar ao carrinho", e);
         }
+        ctx.redirect("/vitrine");
     }
 
     public void verCarrinho(Context ctx) {
         Carrinho carrinho = obterCarrinho(ctx);
         ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
 
-        // Limpeza de itens inválidos
+        // Limpeza de itens órfãos (produtos deletados)
         carrinho.getItens().removeIf(item -> {
             try {
                 return service.buscarProduto(item.getProduto().getId()) == null;
@@ -101,43 +110,44 @@ public class LojaController {
     public void removerDoCarrinho(Context ctx) {
         int id = Integer.parseInt(ctx.pathParam("id"));
         obterCarrinho(ctx).removerItem(id);
-
         persistirSeLogado(ctx, id, 0); // 0 = remover
-
         ctx.redirect("/carrinho");
     }
 
     public void aumentarQuantidade(Context ctx) {
-        int id = Integer.parseInt(ctx.pathParam("id"));
-        ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
-        Product produto = service.buscarProduto(id);
-
-        if(produto != null) {
-            Carrinho c = obterCarrinho(ctx);
-            c.adicionarItem(produto, 1);
-
-            c.getItens().stream()
-                    .filter(i -> i.getProduto().getId() == id)
-                    .findFirst()
-                    .ifPresent(item -> persistirSeLogado(ctx, id, item.getQuantidade()));
-        }
-        ctx.redirect("/carrinho");
+        alterarQuantidade(ctx, 1);
     }
 
     public void diminuirQuantidade(Context ctx) {
-        int id = Integer.parseInt(ctx.pathParam("id"));
-        Carrinho c = obterCarrinho(ctx);
-        c.diminuirItem(id);
+        alterarQuantidade(ctx, -1);
+    }
 
-        Optional<ItemCarrinho> item = c.getItens().stream()
-                .filter(i -> i.getProduto().getId() == id).findFirst();
+    // Refatoração: Metodo único para alterar quantidade (+1 ou -1)
+    private void alterarQuantidade(Context ctx, int delta) {
+        try {
+            int id = Integer.parseInt(ctx.pathParam("id"));
+            Carrinho c = obterCarrinho(ctx);
 
-        if (item.isPresent()) {
-            persistirSeLogado(ctx, id, item.get().getQuantidade());
-        } else {
-            persistirSeLogado(ctx, id, 0);
+            if (delta > 0) {
+                ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
+                Product p = service.buscarProduto(id);
+                if (p != null) c.adicionarItem(p, delta);
+            } else {
+                c.diminuirItem(id);
+            }
+
+            // Persistência
+            Optional<ItemCarrinho> item = c.getItens().stream()
+                    .filter(i -> i.getProduto().getId() == id).findFirst();
+
+            if (item.isPresent()) {
+                persistirSeLogado(ctx, id, item.get().getQuantidade());
+            } else {
+                persistirSeLogado(ctx, id, 0); // Removeu
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao alterar quantidade do item", e);
         }
-
         ctx.redirect("/carrinho");
     }
 }

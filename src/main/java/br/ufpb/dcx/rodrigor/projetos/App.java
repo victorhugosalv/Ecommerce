@@ -184,6 +184,12 @@ public class App {
                 System.exit(1);
             }
             prop.load(input);
+
+            String envDbUrl = System.getenv("DB_URL");
+            if (envDbUrl != null) {
+                prop.setProperty("db.url", envDbUrl);
+                logger.info("Usando URL do banco definida via Variável de Ambiente: {}", envDbUrl);
+            }
         } catch (IOException ex) {
             logger.error("Erro ao carregar o arquivo de propriedades /src/main/resources/application.properties", ex);
             System.exit(1);
