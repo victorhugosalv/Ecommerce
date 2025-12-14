@@ -6,6 +6,7 @@ import br.ufpb.dcx.rodrigor.projetos.login.LoginController;
 import br.ufpb.dcx.rodrigor.projetos.login.UsuarioController;
 import br.ufpb.dcx.rodrigor.projetos.login.UsuarioService;
 import br.ufpb.dcx.rodrigor.projetos.loja.controllers.LojaController;
+import br.ufpb.dcx.rodrigor.projetos.loja.services.CarrinhoService;
 import br.ufpb.dcx.rodrigor.projetos.product.controllers.ProductController;
 import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import io.javalin.Javalin;
@@ -84,9 +85,11 @@ public class App {
     }
 
     private void registrarServicos(JavalinConfig config) {
+        ProductService productService = new ProductService();
         config.appData(Keys.USUARIO_SERVICE.key(), new UsuarioService());
         config.appData(Keys.FORM_SERVICE.key(), new FormService());
         config.appData(Keys.PRODUCT_SERVICE.key(), new ProductService());
+        config.appData(Keys.CARRINHO_SERVICE.key(), new CarrinhoService(productService));
     }
 
 
