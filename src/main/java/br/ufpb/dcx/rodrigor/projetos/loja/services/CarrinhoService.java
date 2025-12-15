@@ -4,6 +4,7 @@ import br.ufpb.dcx.rodrigor.projetos.login.Usuario;
 import br.ufpb.dcx.rodrigor.projetos.loja.model.Carrinho;
 import br.ufpb.dcx.rodrigor.projetos.loja.model.ItemCarrinho;
 import br.ufpb.dcx.rodrigor.projetos.loja.repositories.CarrinhoRepository;
+import br.ufpb.dcx.rodrigor.projetos.product.model.Product;
 import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,29 @@ public class CarrinhoService {
     public CarrinhoService(ProductService productService) {
         this.carrinhoRepository = new CarrinhoRepository();
         this.productService = productService;
+    }
+
+    /**
+     * Adiciona um item ao carrinho, atualizando memória e banco de dados.
+     */
+    public void adicionarItem(Usuario usuario, Carrinho carrinho, int produtoId, int quantidade) {
+
+        Product produto = productService.buscarProduto(produtoId);
+
+        if (produto != null) {
+            carrinho.adicionarItem(produto, quantidade);
+
+            if (usuario != null) {
+                int novaQtdTotal = carrinho.getItens().stream()
+                        .filter(i -> i.getProduto().getId() == produtoId)
+                        .findFirst()
+                        .map(ItemCarrinho::getQuantidade)
+                        .orElse(quantidade);
+
+
+                atualizarItem(usuario, produtoId, novaQtdTotal);
+            }
+        }
     }
 
     /**

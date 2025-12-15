@@ -30,14 +30,6 @@ public class LojaController {
         return carrinho;
     }
 
-    private void persistirSeLogado(Context ctx, int produtoId, int novaQuantidade) {
-        Usuario u = ctx.sessionAttribute("usuario");
-        if (u != null) {
-            CarrinhoService service = ctx.appData(Keys.CARRINHO_SERVICE.key());
-            service.atualizarItem(u, produtoId, novaQuantidade);
-        }
-    }
-
     /**
      * Exibe a página principal da loja (Vitrine).
      * Busca todos os produtos e define qual layout usar (logado ou público).
@@ -63,37 +55,35 @@ public class LojaController {
     }
 
     /**
-     * Endpoint POST para adicionar item ao carrinho.
+     * Endpoint responsável por adicionar um produto ao carrinho de compras.
      * <p>
-     * 1. Adiciona na memória (Sessão).
-     * 2. Se o usuário estiver logado, persiste no Banco via Service.
+     * Fluxo de execução:
+     * 1. Captura o ID do produto da URL e a quantidade do formulário (padrão = 1).
+     * 2. Recupera o usuário logado (se houver) e o carrinho da sessão atual.
+     * 3. Delega ao {@link CarrinhoService} a lógica de adicionar o item na memória
+     * e sincronizar com o banco de dados.
+     * 4. Redireciona o usuário de volta para a Vitrine.
      * </p>
      *
-     * @param ctx Contexto da requisição (contém ID do produto e quantidade).
+     * @param ctx Contexto da requisição HTTP (Javalin).
      */
     public void adicionarAoCarrinho(Context ctx) {
+
         try {
             int id = Integer.parseInt(ctx.pathParam("id"));
             String qtdStr = ctx.formParam("quantidade");
             int quantidade = (qtdStr != null && !qtdStr.isEmpty()) ? Integer.parseInt(qtdStr) : 1;
 
-            ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
-            Product produto = service.buscarProduto(id);
+            Usuario usuario = ctx.sessionAttribute("usuario");
+            Carrinho carrinho = obterCarrinho(ctx);
 
-            if (produto != null) {
-                Carrinho carrinho = obterCarrinho(ctx);
-                carrinho.adicionarItem(produto, quantidade);
+            CarrinhoService service = ctx.appData(Keys.CARRINHO_SERVICE.key());
+            service.adicionarItem(usuario, carrinho, id, quantidade);
 
-                Optional<ItemCarrinho> item = carrinho.getItens().stream()
-                        .filter(i -> i.getProduto().getId() == id).findFirst();
+            logger.info("Solicitação de adição ao carrinho: Produto ID {}", id);
 
-                if(item.isPresent()){
-                    persistirSeLogado(ctx, id, item.get().getQuantidade());
-                }
-                logger.info("Produto {} adicionado ao carrinho. Qtd: {}", id, quantidade);
-            }
         } catch (Exception e) {
-            logger.warn("Tentativa inválida de adicionar ao carrinho", e);
+            logger.warn("Erro ao adicionar ao carrinho", e);
         }
         ctx.redirect("/vitrine");
     }
@@ -144,7 +134,16 @@ public class LojaController {
         processarAlteracaoQuantidade(ctx, -1);
     }
 
-    // Método privado auxiliar para evitar repetição de código no Controller
+    /**
+     * Método auxiliar privado para processar a alteração (+1 ou -1) na quantidade de um item.
+     * <p>
+     * Centraliza a lógica de captura de parâmetros e delegação para o serviço, evitando
+     * repetição de código nos endpoints de aumentar e diminuir quantidade.
+     * </p>
+     *
+     * @param ctx   Contexto da requisição (contém o ID do produto na URL).
+     * @param delta A variação da quantidade (ex: +1 para aumentar, -1 para diminuir).
+     */
     private void processarAlteracaoQuantidade(Context ctx, int delta) {
         try {
             int produtoId = Integer.parseInt(ctx.pathParam("id"));
