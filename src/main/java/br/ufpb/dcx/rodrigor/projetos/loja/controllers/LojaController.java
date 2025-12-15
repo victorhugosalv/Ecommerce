@@ -108,9 +108,25 @@ public class LojaController {
     }
 
     public void removerDoCarrinho(Context ctx) {
-        int id = Integer.parseInt(ctx.pathParam("id"));
-        obterCarrinho(ctx).removerItem(id);
-        persistirSeLogado(ctx, id, 0); // 0 = remover
+        // 1. Pega o ID da URL (/carrinho/remover/10)
+        int produtoId = Integer.parseInt(ctx.pathParam("id"));
+
+        // 2. Pega o usuário da sessão
+        Usuario usuario = ctx.sessionAttribute("usuario");
+
+        // 3. SE tiver usuário logado, manda o Service limpar do banco
+        if (usuario != null) {
+            CarrinhoService service = ctx.appData(Keys.CARRINHO_SERVICE.key());
+            service.removerItem(usuario, produtoId);
+        }
+
+        // 4. Atualiza também a Sessão (Memória RAM) para refletir na hora
+        Carrinho carrinho = ctx.sessionAttribute("carrinho");
+        if (carrinho != null) {
+            carrinho.removerItem(produtoId);
+        }
+
+        // 5. Recarrega a página
         ctx.redirect("/carrinho");
     }
 
@@ -150,4 +166,5 @@ public class LojaController {
         }
         ctx.redirect("/carrinho");
     }
+
 }

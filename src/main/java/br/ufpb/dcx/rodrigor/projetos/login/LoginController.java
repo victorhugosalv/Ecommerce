@@ -2,10 +2,7 @@ package br.ufpb.dcx.rodrigor.projetos.login;
 
 import br.ufpb.dcx.rodrigor.projetos.Keys;
 import br.ufpb.dcx.rodrigor.projetos.loja.model.Carrinho;
-import br.ufpb.dcx.rodrigor.projetos.loja.model.ItemCarrinho;
-import br.ufpb.dcx.rodrigor.projetos.loja.services.CarrinhoRepository;
 import br.ufpb.dcx.rodrigor.projetos.loja.services.CarrinhoService;
-import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import io.javalin.http.Context;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

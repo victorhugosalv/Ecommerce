@@ -1,5 +1,6 @@
-package br.ufpb.dcx.rodrigor.projetos.loja.services;
+package br.ufpb.dcx.rodrigor.projetos.loja.repositories;
 
+import br.ufpb.dcx.rodrigor.projetos.login.Usuario;
 import br.ufpb.dcx.rodrigor.projetos.loja.model.Carrinho;
 import br.ufpb.dcx.rodrigor.projetos.product.model.Product;
 import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
@@ -14,7 +15,6 @@ public class CarrinhoRepository {
 
     // Salva ou Atualiza um item (Upsert)
     public void salvarItem(String usuarioId, int produtoId, int quantidade) {
-        // Comando especial do PostgreSQL para "Inserir, mas se já existir, atualiza"
         String sql = "INSERT INTO itens_carrinho (usuario_id, produto_id, quantidade) VALUES (?, ?, ?) " +
                 "ON CONFLICT (usuario_id, produto_id) DO UPDATE SET quantidade = EXCLUDED.quantidade";
 

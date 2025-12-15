@@ -1,7 +1,7 @@
 package br.ufpb.dcx.rodrigor.projetos.product.services;
 
-import br.ufpb.dcx.rodrigor.projetos.login.LoginController;
 import br.ufpb.dcx.rodrigor.projetos.product.model.Product;
+import br.ufpb.dcx.rodrigor.projetos.product.repositories.ProductRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -3,6 +3,7 @@ package br.ufpb.dcx.rodrigor.projetos.loja.services;
 import br.ufpb.dcx.rodrigor.projetos.login.Usuario;
 import br.ufpb.dcx.rodrigor.projetos.loja.model.Carrinho;
 import br.ufpb.dcx.rodrigor.projetos.loja.model.ItemCarrinho;
+import br.ufpb.dcx.rodrigor.projetos.loja.repositories.CarrinhoRepository;
 import br.ufpb.dcx.rodrigor.projetos.product.services.ProductService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,11 +81,15 @@ public class CarrinhoService {
         }
     }
 
-    // Regra de Negócio 4: Limpar carrinho do usuário (ex: após finalizar compra)
-    public void limparCarrinho(Usuario usuario) {
-        if (usuario != null) {
-            // Implementar método no repositório se necessário, ou remover um a um
-            // carrinhoRepository.limparTudo(usuario.getId());
-        }
+    public void removerItem(Usuario usuario, int produtoId) {
+        // 1. Validação simples
+        if (usuario == null) return;
+
+        // 2. Chama o banco para deletar de verdade
+        carrinhoRepository.removerItem(usuario.getId(), produtoId);
+
+        // 3. Log de auditoria (Aquele que conversamos antes)
+        logger.info("Produto ID {} removido do carrinho do usuário {}", produtoId, usuario.getLogin());
     }
+
 }

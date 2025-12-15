@@ -101,7 +101,6 @@ public class App {
 
             // Verifica se é uma rota protegida
             if (path.startsWith("/products") ||
-                    path.startsWith("/area-interna") ||
                     // Protege /usuarios, MAS libera o cadastro (signup) e o salvamento (cadastrar)
                     (path.startsWith("/usuarios") && !path.equals("/usuarios/signup") && !path.equals("/usuarios/cadastrar"))) {
 

@@ -10,6 +10,7 @@ import java.util.Optional;
 public class Carrinho {
     private List<ItemCarrinho> itens = new ArrayList<>();
 
+    //Adiciona diretamente o Produto e a Quantidade a Carrinho
     public void adicionarItem(Product produto, int quantidade) {
         Optional<ItemCarrinho> itemExistente = itens.stream()
                 .filter(item -> item.getProduto().getId() == produto.getId())
@@ -22,6 +23,7 @@ public class Carrinho {
         }
     }
 
+    //Retoma os Produtos ao Carrinho
     public void adicionarItem(Product produto) {
         this.adicionarItem(produto, 1);
     }

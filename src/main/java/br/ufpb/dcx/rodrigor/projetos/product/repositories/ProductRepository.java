@@ -1,4 +1,4 @@
-package br.ufpb.dcx.rodrigor.projetos.product.services;
+package br.ufpb.dcx.rodrigor.projetos.product.repositories;
 
 import br.ufpb.dcx.rodrigor.projetos.product.model.Product;
 import config.ConnectionFactory;
@@ -50,7 +50,6 @@ public class ProductRepository {
 
     public List<Product> buscarPorNome(String termo) throws SQLException {
         List<Product> lista = new ArrayList<>();
-        // Use ILIKE para Postgres, se for MySQL use LIKE
         String sql = "SELECT * FROM products WHERE nome ILIKE ?";
 
         try (Connection conn = ConnectionFactory.getConnection();
