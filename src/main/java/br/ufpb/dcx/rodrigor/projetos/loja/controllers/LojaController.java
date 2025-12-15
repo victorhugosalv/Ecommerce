@@ -42,7 +42,6 @@ public class LojaController {
         try {
             ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
 
-            // Filtra nulos para evitar erros no template
             List<Product> produtos = service.listarProdutos().stream()
                     .filter(p -> p != null)
                     .collect(Collectors.toList());
@@ -72,7 +71,6 @@ public class LojaController {
                 Carrinho carrinho = obterCarrinho(ctx);
                 carrinho.adicionarItem(produto, quantidade);
 
-                // Persistência
                 Optional<ItemCarrinho> item = carrinho.getItens().stream()
                         .filter(i -> i.getProduto().getId() == id).findFirst();
 
@@ -89,16 +87,9 @@ public class LojaController {
 
     public void verCarrinho(Context ctx) {
         Carrinho carrinho = obterCarrinho(ctx);
-        ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
 
-        // Limpeza de itens órfãos (produtos deletados)
-        carrinho.getItens().removeIf(item -> {
-            try {
-                return service.buscarProduto(item.getProduto().getId()) == null;
-            } catch (Exception e) {
-                return true;
-            }
-        });
+        CarrinhoService carrinhoService = ctx.appData(Keys.CARRINHO_SERVICE.key());
+        carrinhoService.validarItensDoCarrinho(carrinho);
 
         Map<String, Object> model = new HashMap<>();
         model.put("carrinho", carrinho);
@@ -108,25 +99,19 @@ public class LojaController {
     }
 
     public void removerDoCarrinho(Context ctx) {
-        // 1. Pega o ID da URL (/carrinho/remover/10)
-        int produtoId = Integer.parseInt(ctx.pathParam("id"));
-
-        // 2. Pega o usuário da sessão
+        int id = Integer.parseInt(ctx.pathParam("id"));
         Usuario usuario = ctx.sessionAttribute("usuario");
 
-        // 3. SE tiver usuário logado, manda o Service limpar do banco
         if (usuario != null) {
             CarrinhoService service = ctx.appData(Keys.CARRINHO_SERVICE.key());
-            service.removerItem(usuario, produtoId);
+            service.removerItem(usuario, id);
         }
 
-        // 4. Atualiza também a Sessão (Memória RAM) para refletir na hora
         Carrinho carrinho = ctx.sessionAttribute("carrinho");
         if (carrinho != null) {
-            carrinho.removerItem(produtoId);
+            carrinho.removerItem(id);
         }
 
-        // 5. Recarrega a página
         ctx.redirect("/carrinho");
     }
 
@@ -138,7 +123,6 @@ public class LojaController {
         alterarQuantidade(ctx, -1);
     }
 
-    // Refatoração: Metodo único para alterar quantidade (+1 ou -1)
     private void alterarQuantidade(Context ctx, int delta) {
         try {
             int id = Integer.parseInt(ctx.pathParam("id"));

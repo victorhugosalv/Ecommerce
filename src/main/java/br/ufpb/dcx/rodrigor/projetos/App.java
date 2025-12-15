@@ -98,10 +98,7 @@ public class App {
 // --- FILTRO DE SEGURANÇA ---
         app.before(ctx -> {
             String path = ctx.path();
-
-            // Verifica se é uma rota protegida
             if (path.startsWith("/products") ||
-                    // Protege /usuarios, MAS libera o cadastro (signup) e o salvamento (cadastrar)
                     (path.startsWith("/usuarios") && !path.equals("/usuarios/signup") && !path.equals("/usuarios/cadastrar"))) {
 
                 if (ctx.sessionAttribute("usuario") == null) {

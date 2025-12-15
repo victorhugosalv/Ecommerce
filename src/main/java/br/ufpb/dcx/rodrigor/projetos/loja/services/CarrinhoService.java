@@ -19,77 +19,65 @@ public class CarrinhoService {
     private final CarrinhoRepository carrinhoRepository;
     private final ProductService productService;
 
-    // Injeção de dependência: O Service precisa do Repository e do ProductService
     public CarrinhoService(ProductService productService) {
         this.carrinhoRepository = new CarrinhoRepository();
         this.productService = productService;
     }
-    /**
-     * Carrega o carrinho persistido no banco de dados para um usuário específico.
-     * @param usuario O usuário logado.
-     * @return O carrinho recuperado ou um carrinho vazio se o usuário for nulo.
-     */
+
     public Carrinho carregarCarrinhoUsuario(Usuario usuario) {
         if (usuario == null) return new Carrinho();
         return carrinhoRepository.carregarCarrinho(usuario.getId(), productService);
     }
 
-    /**
-     * Realiza a fusão (merge) entre o carrinho temporário da sessão e o carrinho salvo no banco.
-     * Útil quando o usuário adiciona itens como anônimo e depois faz login.
-     * * @param usuario O usuário que acabou de logar.
-     * @param carrinhoSessao O carrinho que estava na memória antes do login.
-     * @return O carrinho unificado.
-     */
     public Carrinho mesclarCarrinhos(Usuario usuario, Carrinho carrinhoSessao) {
-        // 1. Pega o que já estava salvo no banco
         Carrinho carrinhoBanco = carregarCarrinhoUsuario(usuario);
 
         if (carrinhoSessao != null && !carrinhoSessao.getItens().isEmpty()) {
             logger.info("Mesclando itens da sessão para a conta de: {}", usuario.getLogin());
-
             for (ItemCarrinho itemSessao : carrinhoSessao.getItens()) {
-                // A. Adiciona na memória (O objeto Carrinho já sabe somar se for igual)
                 carrinhoBanco.adicionarItem(itemSessao.getProduto(), itemSessao.getQuantidade());
-
-                // B. Descobre qual ficou a quantidade TOTAL (Banco + Sessão)
                 int produtoId = itemSessao.getProduto().getId();
+
+                // Recalcula total e salva
                 int novaQuantidadeTotal = carrinhoBanco.getItens().stream()
                         .filter(i -> i.getProduto().getId() == produtoId)
                         .findFirst()
                         .map(ItemCarrinho::getQuantidade)
                         .orElse(itemSessao.getQuantidade());
 
-                // C. Salva o TOTAL no banco
                 atualizarItem(usuario, produtoId, novaQuantidadeTotal);
             }
         }
         return carrinhoBanco;
     }
 
-    /**
-     * Atualiza a quantidade de um item no banco de dados.
-     * Se a quantidade for <= 0, o item é removido.
-     */
     public void atualizarItem(Usuario usuario, int produtoId, int novaQuantidade) {
-        if (usuario == null) return; // Se não tem usuário, não salva no banco (só sessão)
-
+        if (usuario == null) return;
         if (novaQuantidade > 0) {
             carrinhoRepository.salvarItem(usuario.getId(), produtoId, novaQuantidade);
         } else {
-            carrinhoRepository.removerItem(usuario.getId(), produtoId);
+            removerItem(usuario, produtoId);
         }
     }
 
     public void removerItem(Usuario usuario, int produtoId) {
-        // 1. Validação simples
-        if (usuario == null) return;
-
-        // 2. Chama o banco para deletar de verdade
-        carrinhoRepository.removerItem(usuario.getId(), produtoId);
-
-        // 3. Log de auditoria (Aquele que conversamos antes)
-        logger.info("Produto ID {} removido do carrinho do usuário {}", produtoId, usuario.getLogin());
+        if (usuario != null) {
+            carrinhoRepository.removerItem(usuario.getId(), produtoId);
+            logger.info("Produto ID {} removido do carrinho do usuário {}", produtoId, usuario.getLogin());
+        }
     }
 
+    public void validarItensDoCarrinho(Carrinho carrinho) {
+        // Remove itens que não existem mais no banco de produtos (órfãos)
+        boolean houveRemocao = carrinho.getItens().removeIf(item -> {
+            try {
+                return productService.buscarProduto(item.getProduto().getId()) == null;
+            } catch (Exception e) {
+                return true;
+            }
+        });
+        if (houveRemocao) {
+            logger.warn("Itens inválidos foram removidos automaticamente do carrinho.");
+        }
+    }
 }
