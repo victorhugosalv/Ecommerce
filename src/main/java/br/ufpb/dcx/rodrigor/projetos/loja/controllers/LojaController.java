@@ -38,6 +38,10 @@ public class LojaController {
         }
     }
 
+    /**
+     * Exibe a página principal da loja (Vitrine).
+     * Busca todos os produtos e define qual layout usar (logado ou público).
+     */
     public void mostrarVitrine(Context ctx) {
         try {
             ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
@@ -58,6 +62,15 @@ public class LojaController {
         }
     }
 
+    /**
+     * Endpoint POST para adicionar item ao carrinho.
+     * <p>
+     * 1. Adiciona na memória (Sessão).
+     * 2. Se o usuário estiver logado, persiste no Banco via Service.
+     * </p>
+     *
+     * @param ctx Contexto da requisição (contém ID do produto e quantidade).
+     */
     public void adicionarAoCarrinho(Context ctx) {
         try {
             int id = Integer.parseInt(ctx.pathParam("id"));
@@ -85,6 +98,10 @@ public class LojaController {
         ctx.redirect("/vitrine");
     }
 
+    /**
+     * Exibe a tela do carrinho de compras.
+     * Aciona o serviço para validar se existem itens órfãos antes de renderizar.
+     */
     public void verCarrinho(Context ctx) {
         Carrinho carrinho = obterCarrinho(ctx);
 
@@ -98,6 +115,10 @@ public class LojaController {
         ctx.render("/loja/carrinho.html", model);
     }
 
+    /**
+     * Rota para remover um item.
+     * Sincroniza a remoção tanto na Sessão quanto no Banco (se logado).
+     */
     public void removerDoCarrinho(Context ctx) {
         int id = Integer.parseInt(ctx.pathParam("id"));
         Usuario usuario = ctx.sessionAttribute("usuario");
@@ -116,39 +137,30 @@ public class LojaController {
     }
 
     public void aumentarQuantidade(Context ctx) {
-        alterarQuantidade(ctx, 1);
+        processarAlteracaoQuantidade(ctx, 1);
     }
 
     public void diminuirQuantidade(Context ctx) {
-        alterarQuantidade(ctx, -1);
+        processarAlteracaoQuantidade(ctx, -1);
     }
 
-    private void alterarQuantidade(Context ctx, int delta) {
+    // Método privado auxiliar para evitar repetição de código no Controller
+    private void processarAlteracaoQuantidade(Context ctx, int delta) {
         try {
-            int id = Integer.parseInt(ctx.pathParam("id"));
-            Carrinho c = obterCarrinho(ctx);
+            int produtoId = Integer.parseInt(ctx.pathParam("id"));
+            Carrinho carrinho = obterCarrinho(ctx);
+            Usuario usuario = ctx.sessionAttribute("usuario");
 
-            if (delta > 0) {
-                ProductService service = ctx.appData(Keys.PRODUCT_SERVICE.key());
-                Product p = service.buscarProduto(id);
-                if (p != null) c.adicionarItem(p, delta);
-            } else {
-                c.diminuirItem(id);
-            }
+            // O Controller apenas delega para o Service
+            CarrinhoService service = ctx.appData(Keys.CARRINHO_SERVICE.key());
+            service.alterarQuantidade(usuario, carrinho, produtoId, delta);
 
-            // Persistência
-            Optional<ItemCarrinho> item = c.getItens().stream()
-                    .filter(i -> i.getProduto().getId() == id).findFirst();
-
-            if (item.isPresent()) {
-                persistirSeLogado(ctx, id, item.get().getQuantidade());
-            } else {
-                persistirSeLogado(ctx, id, 0); // Removeu
-            }
+        } catch (NumberFormatException e) {
+            logger.warn("ID de produto inválido: {}", ctx.pathParam("id"));
         } catch (Exception e) {
-            logger.error("Erro ao alterar quantidade do item", e);
+            logger.error("Erro ao alterar quantidade", e);
         }
+
         ctx.redirect("/carrinho");
     }
-
 }

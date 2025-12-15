@@ -13,7 +13,15 @@ import java.sql.SQLException;
 
 public class CarrinhoRepository {
 
-    // Salva ou Atualiza um item (Upsert)
+    /**
+     * Insere ou Atualiza um item no carrinho (Operação UPSERT).
+     * Utiliza a cláusula "ON CONFLICT" do PostgreSQL para evitar duplicidade.
+     *
+     * @param usuarioId ID do usuário dono do carrinho.
+     * @param produtoId ID do produto.
+     * @param quantidade Quantidade a ser salva.
+     * @throws RuntimeException Se houver erro de conexão ou SQL.
+     */
     public void salvarItem(String usuarioId, int produtoId, int quantidade) {
         String sql = "INSERT INTO itens_carrinho (usuario_id, produto_id, quantidade) VALUES (?, ?, ?) " +
                 "ON CONFLICT (usuario_id, produto_id) DO UPDATE SET quantidade = EXCLUDED.quantidade";
@@ -31,6 +39,12 @@ public class CarrinhoRepository {
         }
     }
 
+    /**
+     * Remove fisicamente um item específico da tabela itens_carrinho.
+     *
+     * @param usuarioId ID do usuário.
+     * @param produtoId ID do produto a remover.
+     */
     public void removerItem(String usuarioId, int produtoId) {
         String sql = "DELETE FROM itens_carrinho WHERE usuario_id = ? AND produto_id = ?";
         try (Connection conn = ConnectionFactory.getConnection();
@@ -45,6 +59,13 @@ public class CarrinhoRepository {
         }
     }
 
+    /**
+     * Busca todos os itens vinculados a um usuário e remonta os objetos Produto.
+     *
+     * @param usuarioId ID do usuário.
+     * @param productService Serviço usado para buscar os detalhes completos (nome, preço) de cada produto.
+     * @return Objeto Carrinho preenchido.
+     */
     public Carrinho carregarCarrinho(String usuarioId, ProductService productService) {
         Carrinho carrinho = new Carrinho();
         String sql = "SELECT produto_id, quantidade FROM itens_carrinho WHERE usuario_id = ?";
